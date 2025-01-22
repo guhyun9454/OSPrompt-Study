@@ -22,10 +22,10 @@ mkdir -p $OUTDIR
 # prompt parameter args:
 #    arg 1 = prompt component pool size
 #    arg 2 = prompt length
-#    arg 3 = distill loss weight
+#    arg 3 = qr loss weight
 python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERWRITE \
     --learner_type prompt --learner_name OSPrompt \
-    --prompt_param 100 8 1e-4 --query vit --os_plus_flag\
+    --prompt_param 100 8 1e-4 --query vit\
     --log_dir ${OUTDIR}/os-p++
 
 
@@ -36,10 +36,10 @@ python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERW
 # prompt parameter args:
 #    arg 1 = prompt component pool size
 #    arg 2 = prompt length
-#    arg 3 = distill loss weight
+#    arg 3 = qr loss weight
 python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERWRITE \
     --learner_type prompt --learner_name OSPrompt \
-    --prompt_param 100 8 1e-4 --query vit\
+    --prompt_param 100 8 0.0 --query vit\
     --log_dir ${OUTDIR}/os-p
 
 
@@ -73,6 +73,10 @@ python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERW
 #    arg 3 = -1 -> shallow, 1 -> deep
 python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERWRITE \
     --learner_type prompt --learner_name L2P \
-    --prompt_param 30 20 -1 \
-    --log_dir ${OUTDIR}/l2p++
+    --prompt_param 30 20 1 \
+    --log_dir ${OUTDIR}/deepl2p
 
+python -u run.py --config $CONFIG --gpuid $1 --repeat $REPEAT --overwrite $OVERWRITE \
+    --learner_type prompt --learner_name L2P \
+    --prompt_param 30 20 -1 \
+    --log_dir ${OUTDIR}/l2p
