@@ -1,4 +1,6 @@
 # repo-specific stuff
+test.py
+test.ipynb
 data/
 outputs/
 *.pt
