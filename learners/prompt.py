@@ -97,7 +97,12 @@ class OSPrompt(Prompt):
 
     def create_model(self):
         cfg = self.config
-        model = models.__dict__[cfg['model_type']].__dict__[cfg['model_name']](out_dim=self.out_dim, prompt_flag = 'os',prompt_param=self.prompt_param,query = cfg['query'])
+        model = models.__dict__[cfg['model_type']].__dict__[cfg['model_name']](
+            out_dim=self.out_dim,
+            prompt_flag = 'os',
+            prompt_param=self.prompt_param,
+            query = cfg['query']
+        )
         return model
 
 class CODAPrompt(Prompt):

@@ -50,7 +50,7 @@ class OSPrompt(nn.Module):
         self.e_p_length = int(prompt_param[1])
         self.e_layers = [0, 1, 2, 3, 4]
 
-        # strenth of ortho penalty
+        # strenth of qr penalty
         self.qr_loss_weight = prompt_param[2]
 
     def process_task_count(self):
@@ -140,7 +140,7 @@ class OSPrompt(nn.Module):
             e_valid = True
 
             x_querry_ori = x_querry
-            x_querry = x_block[:, 0,:]
+            x_querry = x_block[:, 0,:] #[CLS] 토큰
 
 
             K = getattr(self, f'e_k_{l}')

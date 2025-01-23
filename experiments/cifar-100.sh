@@ -7,7 +7,7 @@ N_CLASS=100
 OUTDIR=test1/${DATASET}/10-task
 
 # hard coded inputs
-GPUID= 0
+GPUID=0
 CONFIG=configs/cifar-100_prompt.yaml
 REPEAT=1
 OVERWRITE=0
@@ -28,9 +28,6 @@ python -u run.py --config $CONFIG --gpuid $GPUID --repeat $REPEAT --overwrite $O
     --learner_type prompt --learner_name OSPrompt \
     --prompt_param 100 8 1e-4 --query vit\
     --log_dir ${OUTDIR}/os-p++
-
-
-
 
 # OS-P
 #
