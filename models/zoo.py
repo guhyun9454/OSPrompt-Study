@@ -649,8 +649,6 @@ class ViTZoo(nn.Module):
                     elif self.query in ['poolformer', 'swin']:
                         q = self.feat_query(x_query)
                         q = q[-1].mean(-2).mean(-1)
-                    elif self.query == 'resnet':
-                        q = self.feat_query(x_query)[:,:768]
                     else:
                         q = self.feat_query(x_query)
 
@@ -662,6 +660,8 @@ class ViTZoo(nn.Module):
                     elif self.query in ['poolformer', 'swin']:
                         q = self.feat_query(x_query)
                         q = q[-1].mean(-2).mean(-1)
+                    elif self.query == 'resnet':
+                        q = self.feat_query(x_query)[:,:768]
                     else:
                         q = self.feat_query(x_query)
 
