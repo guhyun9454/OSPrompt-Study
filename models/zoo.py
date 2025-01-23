@@ -662,6 +662,7 @@ class ViTZoo(nn.Module):
                         q = q[-1].mean(-2).mean(-1)
                     elif self.query == 'resnet':
                         q = self.feat_query(x_query)[:,:768]
+                        print("resnet query made!")
                     else:
                         q = self.feat_query(x_query)
 
