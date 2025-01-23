@@ -580,6 +580,10 @@ class ViTZoo(nn.Module):
                     pretrained=True,
                     features_only=True,
                 )
+            elif query == 'resnet':
+                print("Load ResNet ...")
+                zoo_model_query = timm.create_model('resnet50', pretrained=True)
+                zoo_model_query = nn.Sequential(*list(zoo_model_query.children())[:-1])  # Feature extraction layer
             else:
                 NotImplementedError
 
