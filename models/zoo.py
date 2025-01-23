@@ -649,6 +649,9 @@ class ViTZoo(nn.Module):
                     elif self.query in ['poolformer', 'swin']:
                         q = self.feat_query(x_query)
                         q = q[-1].mean(-2).mean(-1)
+                    elif self.query == 'resnet':
+                        # ResNet의 Global Average Pooling으로부터 feature vector를 추출
+                        q = self.feat_query(x_query)[:,768]
                     else:
                         q = self.feat_query(x_query)
 
