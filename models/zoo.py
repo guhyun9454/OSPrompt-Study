@@ -581,9 +581,36 @@ class ViTZoo(nn.Module):
                     features_only=True,
                 )
             elif query == 'resnet':
-                print("Load ResNet ...")
+                print("Load ResNet 50 ...")
                 zoo_model_query = timm.create_model('resnet50', pretrained=True)
                 zoo_model_query = nn.Sequential(*list(zoo_model_query.children())[:-1])  # Feature extraction layer
+            elif query == 'resnet_pooling':
+                print("Load ResNet 50 ...")
+                zoo_model_query = timm.create_model('resnet50', pretrained=True)
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],          
+                    nn.Unflatten(1, (1, -1)),                      # (B, C) -> (B, 1, C)
+                    nn.AdaptiveAvgPool1d(768),                     # (B, 1, C) -> (B, 1, 768)
+                    nn.Flatten(1)                                  # (B, 1, 768) -> (B, 768)
+                )
+            elif query == 'resnet101':
+                print("Load ResNet 101 ...")
+                zoo_model_query = timm.create_model('resnet101', pretrained=True)
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],          
+                    nn.Unflatten(1, (1, -1)),                      # (B, C) -> (B, 1, C)
+                    nn.AdaptiveAvgPool1d(768),                     # (B, 1, C) -> (B, 1, 768)
+                    nn.Flatten(1)                                  # (B, 1, 768) -> (B, 768)
+                )
+            elif query == 'resnet152':
+                print("Load ResNet 152 ...")
+                zoo_model_query = timm.create_model('resnet152', pretrained=True)
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],         
+                    nn.Unflatten(1, (1, -1)),                      # (B, C) -> (B, 1, C)
+                    nn.AdaptiveAvgPool1d(768),                     # (B, 1, C) -> (B, 1, 768)
+                    nn.Flatten(1)                                  # (B, 1, 768) -> (B, 768)
+                )
             elif query == 'convnext_small':
                 print("Load convnext_small ...")
                 zoo_model_query = timm.create_model('convnext_small', pretrained=True)
@@ -599,6 +626,18 @@ class ViTZoo(nn.Module):
                     *list(zoo_model_query.children())[:-1],  # ConvNeXt backbone
                     nn.AdaptiveAvgPool2d((1, 1)),          # (B, 768, 7, 7) -> (B, 768, 1, 1)
                     nn.Flatten()                           # (B, 768, 1, 1) -> (B, 768)
+                )
+            elif query == 'convnext_base':
+                print("Load convnext_base ...")
+                zoo_model_query = timm.create_model('convnext_base', pretrained=True)
+                zoo_model_query = nn.Sequential(*list(zoo_model_query.children())[:-1]) 
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],          # ConvNeXt backbone (마지막 레이어 제외)
+                    nn.AdaptiveAvgPool2d((1, 1)),                  # (B, C, H, W) -> (B, C, 1, 1)
+                    nn.Flatten(),                                  # (B, C, 1, 1) -> (B, C)
+                    nn.Unflatten(1, (1, -1)),                      # (B, C) -> (B, 1, C)
+                    nn.AdaptiveAvgPool1d(768),                     # (B, 1, C) -> (B, 1, 768)
+                    nn.Flatten(1)                                  # (B, 1, 768) -> (B, 768)
                 )
             else:
                 NotImplementedError
