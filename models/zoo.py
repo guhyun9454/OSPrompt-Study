@@ -584,6 +584,22 @@ class ViTZoo(nn.Module):
                 print("Load ResNet ...")
                 zoo_model_query = timm.create_model('resnet50', pretrained=True)
                 zoo_model_query = nn.Sequential(*list(zoo_model_query.children())[:-1])  # Feature extraction layer
+            elif query == 'convnext_small':
+                print("Load convnext_small ...")
+                zoo_model_query = timm.create_model('convnext_small', pretrained=True)
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],  # ConvNeXt backbone
+                    nn.AdaptiveAvgPool2d((1, 1)),          # (B, 768, 7, 7) -> (B, 768, 1, 1)
+                    nn.Flatten()                           # (B, 768, 1, 1) -> (B, 768)
+                )
+            elif query == 'convnext_tiny':
+                print("Load convnext_tiny ...")
+                zoo_model_query = timm.create_model('convnext_tiny', pretrained=True)
+                zoo_model_query = nn.Sequential(
+                    *list(zoo_model_query.children())[:-1],  # ConvNeXt backbone
+                    nn.AdaptiveAvgPool2d((1, 1)),          # (B, 768, 7, 7) -> (B, 768, 1, 1)
+                    nn.Flatten()                           # (B, 768, 1, 1) -> (B, 768)
+                )
             else:
                 NotImplementedError
 
@@ -662,7 +678,7 @@ class ViTZoo(nn.Module):
                         q = q[-1].mean(-2).mean(-1)
                     elif self.query == 'resnet':
                         q = self.feat_query(x_query)[:,:768]
-                        print("resnet query made!")
+                        # print("resnet query made!")
                     else:
                         q = self.feat_query(x_query)
 
