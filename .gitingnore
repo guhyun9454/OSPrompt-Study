@@ -10,7 +10,8 @@ outputs/
 *.pth
 *.png
 .swp
-
+*/__pycache__/
+save/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
