@@ -11,7 +11,6 @@ momentum: 0.9
 weight_decay: 0
 model_type: zoo
 model_name: vit_pt_imnet
-max_task: -1
 dataroot: data
 workers: 4
 validation: False

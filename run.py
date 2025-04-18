@@ -108,12 +108,12 @@ if __name__ == '__main__':
 
             # extend if more repeats left
             if start_r < args.repeat:
-                max_task = avg_metrics['acc']['global'].shape[0]
+                num_tasks = avg_metrics['acc']['global'].shape[0]
                 for mkey in metric_keys: 
-                    avg_metrics[mkey]['global'] = np.append(avg_metrics[mkey]['global'], np.zeros((max_task,args.repeat-start_r)), axis=-1)
+                    avg_metrics[mkey]['global'] = np.append(avg_metrics[mkey]['global'], np.zeros((num_tasks,args.repeat-start_r)), axis=-1)
                     if (not (mkey in global_only)):
-                        avg_metrics[mkey]['pt'] = np.append(avg_metrics[mkey]['pt'], np.zeros((max_task,max_task,args.repeat-start_r)), axis=-1)
-                        avg_metrics[mkey]['pt-local'] = np.append(avg_metrics[mkey]['pt-local'], np.zeros((max_task,max_task,args.repeat-start_r)), axis=-1)
+                        avg_metrics[mkey]['pt'] = np.append(avg_metrics[mkey]['pt'], np.zeros((num_tasks,num_tasks,args.repeat-start_r)), axis=-1)
+                        avg_metrics[mkey]['pt-local'] = np.append(avg_metrics[mkey]['pt-local'], np.zeros((num_tasks,num_tasks,args.repeat-start_r)), axis=-1)
 
         except:
             start_r = 0
@@ -137,13 +137,13 @@ if __name__ == '__main__':
         trainer = Trainer(args, seed, metric_keys, save_keys)
 
         # init total run metrics storage
-        max_task = trainer.max_task
+        num_tasks = trainer.num_tasks
         if r == 0: 
             for mkey in metric_keys: 
-                avg_metrics[mkey]['global'] = np.zeros((max_task,args.repeat))
+                avg_metrics[mkey]['global'] = np.zeros((num_tasks,args.repeat))
                 if (not (mkey in global_only)):
-                    avg_metrics[mkey]['pt'] = np.zeros((max_task,max_task,args.repeat))
-                    avg_metrics[mkey]['pt-local'] = np.zeros((max_task,max_task,args.repeat))
+                    avg_metrics[mkey]['pt'] = np.zeros((num_tasks,num_tasks,args.repeat))
+                    avg_metrics[mkey]['pt-local'] = np.zeros((num_tasks,num_tasks,args.repeat))
 
         # train model
         avg_metrics = trainer.train(avg_metrics)  

@@ -51,8 +51,8 @@ class Trainer:
             args.first_split_size = num_classes
 
         # load tasks
-        class_order = np.arange(num_classes).tolist()
-        class_order_logits = np.arange(num_classes).tolist()
+        class_order = np.arange(num_classes).tolist() # [0,1,2,...,num_classes-1]
+        class_order_logits = np.arange(num_classes).tolist() # [0,1,2,...,num_classes-1]
         if self.seed > 0 and args.rand_split:
             print('=============================================')
             print('Shuffling....')
@@ -64,7 +64,7 @@ class Trainer:
         self.tasks = []
         self.tasks_logits = []
         p = 0
-        while p < num_classes and (args.max_task == -1 or len(self.tasks) < args.max_task):
+        while p < num_classes:
             inc = args.other_split_size if p > 0 else args.first_split_size
             self.tasks.append(class_order[p:p+inc])
             self.tasks_logits.append(class_order_logits[p:p+inc])
@@ -72,11 +72,8 @@ class Trainer:
         self.num_tasks = len(self.tasks)
         self.task_names = [str(i+1) for i in range(self.num_tasks)]
 
-        # number of tasks to perform
-        if args.max_task > 0:
-            self.max_task = min(args.max_task, len(self.task_names))
-        else:
-            self.max_task = len(self.task_names)
+
+        self.num_tasks = len(self.task_names)
 
         # datasets and dataloaders
         k = 1 # number of transforms per image
@@ -150,7 +147,7 @@ class Trainer:
         if not os.path.exists(temp_dir): os.makedirs(temp_dir)
 
         # for each task
-        for i in range(self.max_task):
+        for i in range(self.num_tasks):
 
             # save current task index
             self.current_t_index = i
@@ -230,9 +227,9 @@ class Trainer:
 
         # Calculate average performance across self.tasks
         # Customize this part for a different performance metric
-        avg_acc_history = [0] * self.max_task
-        acc_matrix = np.zeros((self.max_task, self.max_task))
-        for i in range(self.max_task):
+        avg_acc_history = [0] * self.num_tasks
+        acc_matrix = np.zeros((self.num_tasks, self.num_tasks))
+        for i in range(self.num_tasks):
             train_name = self.task_names[i]
             cls_acc_sum = 0
             for j in range(i+1):
@@ -263,7 +260,7 @@ class Trainer:
             metric_table[mkey] = {}
             metric_table_local[mkey] = {}
             
-        for i in range(self.max_task):
+        for i in range(self.num_tasks):
 
             # increment task id in prompting modules
             if i > 0:
