@@ -120,7 +120,8 @@ class Trainer:
                         'tasks': self.tasks_logits,
                         'top_k': self.top_k,
                         'prompt_param':[self.num_tasks,args.prompt_param],
-                        'query': args.query
+                        'query': args.query,
+                        'args' : args,
                         }
         self.learner_type, self.learner_name = args.learner_type, args.learner_name
         self.learner = learners.__dict__[self.learner_type].__dict__[self.learner_name](self.learner_config)

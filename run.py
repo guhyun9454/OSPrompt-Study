@@ -42,7 +42,9 @@ def create_args():
     # Config Arg
     parser.add_argument('--config', type=str, default="configs/config.yaml",
                          help="yaml experiment config input")
-
+    
+    #Misc Args
+    parser.add_argument('--develop', action='store_true', default=False)
     return parser
 
 def get_args(argv):
@@ -67,6 +69,7 @@ class Logger(object):
 
 if __name__ == '__main__':
     args = get_args(sys.argv[1:])
+    print(args)
 
     # determinstic backend
     torch.backends.cudnn.benchmark = False

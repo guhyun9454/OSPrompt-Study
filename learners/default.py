@@ -92,13 +92,16 @@ class NormalNN(nn.Module):
             batch_time = AverageMeter()
             batch_timer = Timer()
             for epoch in range(self.config['schedule'][-1]):
+                if self.config['args'].develop and epoch > 1:
+                    break
                 self.epoch=epoch
 
                 if epoch > 0: self.scheduler.step()
 
                 batch_timer.tic()
                 for i, (x, y, task)  in enumerate(train_loader):
-
+                    if self.config['args'].develop and i > 1:
+                        break
                     # verify in train mode
                     self.model.train()
 
