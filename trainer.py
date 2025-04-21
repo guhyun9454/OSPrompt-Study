@@ -62,12 +62,12 @@ class Trainer:
             # print('post-shuffle:' + str(class_order))
             print('=============================================')
         self.tasks = []
-        self.tasks_logits = []
+        self.class_indices_by_task = []
         p = 0
         while p < num_classes:
             inc = args.other_split_size if p > 0 else args.first_split_size
             self.tasks.append(class_order[p:p+inc])
-            self.tasks_logits.append(class_order_logits[p:p+inc])
+            self.class_indices_by_task.append(class_order_logits[p:p+inc])
             p += inc
         self.num_tasks = len(self.tasks)
         self.task_names = [str(i+1) for i in range(self.num_tasks)]
@@ -117,7 +117,7 @@ class Trainer:
                         'DW': args.DW,
                         'batch_size': args.batch_size,
                         'upper_bound_flag': args.upper_bound_flag,
-                        'tasks': self.tasks_logits,
+                        'tasks': self.class_indices_by_task,
                         'top_k': self.top_k,
                         'prompt_param':[self.num_tasks,args.prompt_param],
                         'query': args.query,
@@ -135,7 +135,7 @@ class Trainer:
         self.test_dataset.load_dataset(t_index, train=True)
         test_loader  = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, drop_last=False, num_workers=self.workers)
         if local:
-            return self.learner.validation(test_loader, task_in = self.tasks_logits[t_index], task_metric=task)
+            return self.learner.validation(test_loader, task_in = self.class_indices_by_task[t_index], task_metric=task)
         else:
             return self.learner.validation(test_loader, task_metric=task)
 
@@ -158,7 +158,7 @@ class Trainer:
             print('======================', train_name, '=======================')
 
             # load dataset for task
-            task = self.tasks_logits[i]
+            task = self.class_indices_by_task[i]
             if self.oracle_flag:
                 self.train_dataset.load_dataset(i, train=False)
                 self.learner = learners.__dict__[self.learner_type].__dict__[self.learner_name](self.learner_config)
@@ -275,7 +275,7 @@ class Trainer:
             # load model
             model_save_dir = self.model_top_dir + '/models/repeat-'+str(self.seed+1)+'/task-'+self.task_names[i]+'/'
             self.learner.task_count = i 
-            self.learner.add_valid_output_dim(len(self.tasks_logits[i]))
+            self.learner.add_valid_output_dim(len(self.class_indices_by_task[i]))
             self.learner.pre_steps()
             self.learner.load_model(model_save_dir)
 
