@@ -13,6 +13,7 @@ outputs/
 */__pycache__/
 save/
 *.pyc
+.cursor
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

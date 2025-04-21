@@ -140,8 +140,8 @@ class NormalNN(nn.Module):
 
         # Extend memory
         self.task_count += 1
-        if self.memory_size > 0:
-            train_dataset.update_coreset(self.memory_size, np.arange(self.last_valid_out_dim))
+        # if self.memory_size > 0:
+        #     train_dataset.update_coreset(self.memory_size, np.arange(self.last_valid_out_dim))
 
         try:
             return batch_time.avg
