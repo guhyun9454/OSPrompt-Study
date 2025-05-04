@@ -190,6 +190,15 @@ if __name__ == '__main__':
     print('===Summary of experiment===')
     for mkey in metric_keys: 
         print(mkey, ' | mean:', avg_metrics[mkey]['global'][-1,0])
+    
+    # 시간 정보 출력 (h:m:s 형식)
+    if 'total_time' in avg_metrics:
+        total_seconds = avg_metrics['total_time']['global'][0, 0]
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        seconds = int(total_seconds % 60)
+        print(f'전체 학습 시간: {hours:02d}:{minutes:02d}:{seconds:02d}')
+    
     print('F-score:', f_score)
     
 

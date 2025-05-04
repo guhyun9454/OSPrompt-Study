@@ -170,8 +170,14 @@ class Trainer:
         # VIL 모드 확인 - loaders가 orig_loaders로 이름 변경됨
         is_vil_mode = hasattr(self.train_dataset, 'orig_loaders') and hasattr(self.train_dataset, 'class_mask')
 
+        # 전체 학습 시간 측정 시작
+        total_start_time = time.time()
+
         # for each task
         for i in range(self.num_tasks):
+
+            # 태스크 시작 시간 기록
+            task_start_time = time.time()
 
             # save current task index
             self.current_t_index = i
@@ -230,6 +236,9 @@ class Trainer:
                     if self.learner.model.prompt is not None:
                         self.learner.model.prompt.process_task_count()
 
+            # 학습 시작 시간 기록
+            train_start_time = time.time()
+
             # learn
             if is_vil_mode:
                 self.test_dataset.load_dataset(i, train=False)
@@ -242,8 +251,17 @@ class Trainer:
             if not os.path.exists(model_save_dir): os.makedirs(model_save_dir)
             avg_train_time = self.learner.learn_batch(train_loader, self.train_dataset, model_save_dir, test_loader)
 
+            # 학습 종료 시간 기록 및 출력
+            train_end_time = time.time()
+            train_time = train_end_time - train_start_time
+            train_time_str = self.format_time(train_time)
+            print(f'Task {i+1} 학습 시간: {train_time_str}')
+
             # save model
             self.learner.save_model(model_save_dir)
+            
+            # 평가 시작 시간 기록
+            eval_start_time = time.time()
             
             # VIL 시나리오에서 평가 실행
             if is_vil_mode:
@@ -265,7 +283,26 @@ class Trainer:
                 avg_metrics["A_avg"]["global"][i, 0]  = stats["A_avg"]
                 avg_metrics["Forgetting"]["global"][i, 0] = stats["Forgetting"]
 
+            # 평가 종료 시간 기록 및 출력
+            eval_end_time = time.time()
+            eval_time = eval_end_time - eval_start_time
+            eval_time_str = self.format_time(eval_time)
+            print(f'Task {i+1} 평가 시간: {eval_time_str}')
+
+            # 태스크 종료 시간 기록 및 출력
+            task_end_time = time.time()
+            task_time = task_end_time - task_start_time
+            task_time_str = self.format_time(task_time)
+            print(f'Task {i+1} 총 소요 시간: {task_time_str}')
+
             if avg_train_time is not None: avg_metrics['time']['global'][i] = avg_train_time
+
+        # 전체 학습 시간 기록 및 출력
+        total_end_time = time.time()
+        total_time = total_end_time - total_start_time
+        total_time_str = self.format_time(total_time)
+        print(f'전체 학습 소요 시간: {total_time_str}')
+        avg_metrics['total_time'] = {'global': np.array([[total_time]])}
 
         return avg_metrics
     
@@ -304,6 +341,9 @@ class Trainer:
         # VIL 모드 확인
         is_vil_mode = hasattr(self.train_dataset, 'orig_loaders') and hasattr(self.train_dataset, 'class_mask')
 
+        # 전체 평가 시간 측정 시작
+        eval_start_time = time.time()
+
         # for convenience
         if is_vil_mode:
             # 행렬 초기화
@@ -313,10 +353,16 @@ class Trainer:
             
             # 모든 태스크에 대한 평가
             for t in range(self.num_tasks):
+                task_eval_start = time.time()
                 self.test_dataset.load_dataset(t, train=False)
                 test_loader = self.test_dataset.curr_loader
                 for task_id in range(min(t+1, self.num_tasks)):
                     acc_matrix[t, task_id] = self.task_eval(task_id)
+                
+                task_eval_end = time.time()
+                task_eval_time = task_eval_end - task_eval_start
+                task_eval_time_str = self.format_time(task_eval_time)
+                print(f'최종 평가 - Task {t+1} 평가 시간: {task_eval_time_str}')
 
             # 평가 메트릭 계산
             stats = evaluate_till_now(
@@ -336,12 +382,11 @@ class Trainer:
             
             # F-score 계산 및 반환
             f_score = self.cal_fscore(acc_matrix[:, -1])
-            
-            return avg_metrics, f_score
         else:
             # 기존 평가 방식
             # validation
             for t in range(self.num_tasks):
+                task_eval_start = time.time()
                 if t > self.current_t_index: break
                 name = self.task_names[t]
                 for i, task in enumerate(self.metric_keys):
@@ -363,11 +408,22 @@ class Trainer:
                         for v_i, pt_acc in enumerate(curr_pt):
                             avg_metrics[task]['pt'][t, v_i, 0] = pt_acc[0]
                             avg_metrics[task]['pt-local'][t, v_i, 0] = pt_acc[1]
+                
+                task_eval_end = time.time()
+                task_eval_time = task_eval_end - task_eval_start
+                task_eval_time_str = self.format_time(task_eval_time)
+                print(f'최종 평가 - Task {t+1} 평가 시간: {task_eval_time_str}')
             
             # F-score 계산 (1 차원 배열로 전달)
             f_score = self.cal_fscore(avg_metrics['acc']['global'].reshape(-1))
-            
-            return avg_metrics, f_score
+        
+        # 전체 평가 시간 기록 및 출력
+        eval_end_time = time.time()
+        eval_total_time = eval_end_time - eval_start_time
+        eval_total_time_str = self.format_time(eval_total_time)
+        print(f'최종 평가 총 소요 시간: {eval_total_time_str}')
+        
+        return avg_metrics, f_score
 
     def cal_fscore(self, y):
         index = y.shape [1]
@@ -378,3 +434,9 @@ class Trainer:
 
         fgt = fgt/(index-1)
         return fgt
+
+    def format_time(self, seconds):
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        remaining_seconds = int(seconds % 60)
+        return f"{hours:02d}:{minutes:02d}:{remaining_seconds:02d}"
