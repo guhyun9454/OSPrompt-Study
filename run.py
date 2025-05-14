@@ -38,6 +38,8 @@ def create_args():
                         help="activate learner specific settings for debug_mode")
     parser.add_argument('--overwrite', type=int, default=0, metavar='N', help='Train regardless of whether saved model exists')
     parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
+    parser.add_argument('--wandb_run', type=str, default=None, help='Wandb run name')
+    parser.add_argument('--wandb_project', type=str, default=None, help='Wandb project name')
 
     # Model Args
     parser.add_argument('--model_type', type=str, default='zoo', help="Base model architecture type")
@@ -130,6 +132,17 @@ if __name__ == '__main__':
     # Set seed for reproducibility
     seed_everything(args.seed)
 
+    # wandb 초기화
+    if args.wandb_run and args.wandb_project:
+        import wandb
+        import getpass
+        
+        args.wandb = True
+        wandb.init(entity="OODVIL", project=args.wandb_project, name=args.wandb_run, config=args)
+        wandb.config.update({"username": getpass.getuser()})
+    else:
+        args.wandb = False
+
     # duplicate output stream to output file
     if not os.path.exists(args.log_dir): os.makedirs(args.log_dir)
     log_out = args.log_dir + '/output.log'
@@ -200,6 +213,28 @@ if __name__ == '__main__':
         print(f'전체 학습 시간: {hours:02d}:{minutes:02d}:{seconds:02d}')
     
     print('F-score:', f_score)
+    
+    # wandb에 최종 결과 로깅
+    if args.wandb:
+        import wandb
+        # 모든 최종 메트릭 로깅
+        final_metrics = {}
+        for mkey in metric_keys:
+            if mkey != 'time':  # 시간은 제외
+                metric_value = avg_metrics[mkey]['global'][-1,0]
+                final_metrics[f'Final_{mkey}'] = metric_value
+        
+        # F-score 추가
+        final_metrics['Final_F_score'] = f_score
+        
+        # 총 학습 시간 추가
+        if 'total_time' in avg_metrics:
+            final_metrics['Total_Time'] = avg_metrics['total_time']['global'][0, 0]
+        
+        wandb.log(final_metrics)
+        
+        # wandb 종료
+        wandb.finish()
     
 
 

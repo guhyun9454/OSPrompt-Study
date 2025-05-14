@@ -256,6 +256,14 @@ class Trainer:
             train_time = train_end_time - train_start_time
             train_time_str = self.format_time(train_time)
             print(f'Task {i+1} 학습 시간: {train_time_str}')
+            
+            # 학습 시간 wandb 로깅
+            if self.learner.config["args"].wandb:
+                import wandb
+                wandb.log({
+                    f"Task_Train_Time": train_time,
+                    "Task": i
+                })
 
             # save model
             self.learner.save_model(model_save_dir)
@@ -282,6 +290,16 @@ class Trainer:
                 avg_metrics["A_last"]["global"][i, 0] = stats["A_last"]
                 avg_metrics["A_avg"]["global"][i, 0]  = stats["A_avg"]
                 avg_metrics["Forgetting"]["global"][i, 0] = stats["Forgetting"]
+                
+                # wandb 로깅 추가
+                if self.learner.config["args"].wandb:
+                    import wandb
+                    wandb.log({
+                        "A_last (↑)": stats["A_last"], 
+                        "A_avg (↑)": stats["A_avg"], 
+                        "Forgetting (↓)": stats["Forgetting"], 
+                        "TASK": i
+                    })
 
             # 평가 종료 시간 기록 및 출력
             eval_end_time = time.time()
@@ -379,6 +397,16 @@ class Trainer:
             avg_metrics['A_last']['global'][-1, 0] = stats['A_last']
             avg_metrics['A_avg']['global'][-1, 0] = stats['A_avg']
             avg_metrics['Forgetting']['global'][-1, 0] = stats['Forgetting']
+            
+            # wandb 로깅 추가
+            if self.learner.config["args"].wandb:
+                import wandb
+                wandb.log({
+                    "Final_A_last (↑)": stats["A_last"], 
+                    "Final_A_avg (↑)": stats["A_avg"], 
+                    "Final_Forgetting (↓)": stats["Forgetting"],
+                    "Final_TASK": self.num_tasks - 1
+                })
             
             # F-score 계산 및 반환
             f_score = self.cal_fscore(acc_matrix[:, -1])
