@@ -52,6 +52,11 @@ class OSPrompt(nn.Module):
 
         # strenth of qr penalty
         self.qr_loss_weight = prompt_param[2]
+        
+        # solver method
+        self.solve_method = 0
+        if len(prompt_param) > 3:
+            self.solve_method = int(prompt_param[3])
 
     def process_task_count(self):
         self.task_count += 1
@@ -103,25 +108,53 @@ class OSPrompt(nn.Module):
         f = int((self.task_count + 1) * pt)
         if s > 0:
             uu[:, 0:s] = vv[:, 0:s].clone()
-        for k in range(s, f):
-            redo = True
-            while redo:
-                redo = False
-                vk = torch.randn_like(vv[:, k]).to(vv.device)
-                uk = 0
-                for j in range(0, k):
-                    if not redo:
-                        uj = uu[:, j].clone()
-                        proj = projection(uj, vk)
-                        if proj is None:
-                            redo = True
-                            print('restarting!!!')
-                        else:
-                            uk = uk + proj
-                if not redo: uu[:, k] = vk - uk
-        for k in range(s, f):
-            uk = uu[:, k].clone()
-            uu[:, k] = uk / (uk.norm())
+            
+        # 방법 3: torch.nn.init.orthogonal_로 전체 초기화
+        if self.solve_method == 3:
+            temp = torch.zeros((vv.shape[0], f-s), device=vv.device)
+            nn.init.orthogonal_(temp)
+            uu[:, s:f] = temp
+        else:
+            for k in range(s, f):
+                # 방법 2: 슬롯 그룹별 직교 초기화
+                if self.solve_method == 2:
+                    if k == s:  # 슬롯 그룹 첫 번째 벡터
+                        uu[:, k] = torch.randn_like(vv[:, k]).to(vv.device)
+                        nn.init.orthogonal_(uu[:, k:k+1].T)
+                    else:
+                        vk = torch.randn_like(vv[:, k]).to(vv.device)
+                        vk = vk - (uu[:, s:k] @ (uu[:, s:k].T @ vk))  # 투영 제거
+                        uu[:, k] = vk / vk.norm()
+                # 방법 0 또는 1: 기존 방식
+                else:
+                    redo = True
+                    tries = 0
+                    while redo:
+                        redo = False
+                        tries += 1
+                        vk = torch.randn_like(vv[:,k]).to(vv.device)
+                        uk = 0
+                        for j in range(0, k):
+                            if not redo:
+                                uj = uu[:, j].clone()
+                                proj = projection(uj, vk)
+                                if proj is None:
+                                    redo = True
+                                    # print('restarting!!!')
+                                else:
+                                    uk = uk + proj
+                        # 방법 1: 100번 시도 후 uniform 초기화로 대체
+                        if self.solve_method == 1 and tries > 100:
+                            uu[:, k].uniform_(-1e-2, 1e-2)
+                            break
+                        if not redo: 
+                            uu[:, k] = vk - uk
+            
+            # 방법 0, 1: 정규화 단계
+            if self.solve_method in [0, 1]:
+                for k in range(s, f):
+                    uk = uu[:, k].clone()
+                    uu[:, k] = uk / (uk.norm())
 
         # undo swapping of rows and columns
         uu = uu.T
@@ -239,6 +272,11 @@ class CodaPrompt(nn.Module):
         # strenth of ortho penalty
         self.ortho_mu = prompt_param[2]
         
+        # solver method
+        self.solve_method = 0
+        if len(prompt_param) > 3:
+            self.solve_method = int(prompt_param[3])
+
     def process_task_count(self):
         self.task_count += 1
 
