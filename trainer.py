@@ -114,6 +114,14 @@ class Trainer:
         self.oracle_flag = args.oracle_flag
         self.add_dim = 0
 
+        # Track which semantic classes have been introduced so far. This is
+        # required in the VIL setting where a "task" may correspond to a new
+        # domain that does not actually introduce any unseen categories.  We
+        # will use this information later to trigger prompt.process_task_count()
+        # only when at least one brand-new class appears, preventing the prompt
+        # module from unnecessarily increasing its internal task counter.
+        self.seen_classes: set[int] = set()
+
         # Prepare the self.learner (model)
         self.learner_config = {'num_classes': num_classes,
                         'lr': args.lr,
@@ -227,14 +235,32 @@ class Trainer:
             else:
                 train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=int(self.workers))
 
-            # increment task id in prompting modules
-            if i > 0:
+            # ------------------------------------------------------------------
+            # Increment prompt task counter ONLY if at least one *new* semantic
+            # class appears in the current task. In VIL, some tasks may only
+            # introduce a new domain and reuse classes that have been seen
+            # before; bumping the internal task counter in such a case leads to
+            # an incorrect calculation of "pool slice size" inside the
+            # Gram–Schmidt routine and may cause degenerate behaviour.
+            # ------------------------------------------------------------------
+
+            current_classes = set(task) if task is not None else set()
+            unseen_classes  = current_classes.difference(self.seen_classes)
+
+            # decide whether to update the task counter of the prompt module
+            should_increase_prompt_task = (i > 0) and (len(unseen_classes) > 0)
+
+            if should_increase_prompt_task:
                 try:
                     if self.learner.model.module.prompt is not None:
                         self.learner.model.module.prompt.process_task_count()
-                except:
-                    if self.learner.model.prompt is not None:
+                except AttributeError:
+                    # single-GPU or DataParallel not used
+                    if getattr(self.learner.model, 'prompt', None) is not None:
                         self.learner.model.prompt.process_task_count()
+
+            # update the global record of seen classes
+            self.seen_classes.update(current_classes)
 
             # 학습 시작 시간 기록
             train_start_time = time.time()
