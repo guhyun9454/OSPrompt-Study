@@ -21,14 +21,25 @@ def seed_everything(seed: int = 42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+def get_available_gpus():
+    """사용 가능한 모든 GPU를 감지하여 ID 리스트를 반환합니다."""
+    if not torch.cuda.is_available():
+        return [-1]  # CPU 모드
+    
+    num_gpus = torch.cuda.device_count()
+    if num_gpus == 0:
+        return [-1]  # GPU가 감지되지 않음
+    
+    return list(range(num_gpus))  # 사용 가능한 모든 GPU ID 반환
+
 def create_args():
     
     # This function prepares the variables shared across demo.py
     parser = argparse.ArgumentParser()
 
     # Standard Args
-    parser.add_argument('--gpuid', nargs="+", type=int, default=[0],
-                         help="The list o f gpuid, ex:--gpuid 3 1. Negative value means cpu-only")
+    parser.add_argument('--gpuid', nargs="+", type=int, default=None,
+                         help="The list of gpuid, ex:--gpuid 3 1. None/빈값(자동 감지), Negative value means cpu-only")
     parser.add_argument('--log_dir', type=str, default="outputs/out",
                          help="Save experiments results in dir for future plotting!")
     parser.add_argument('--learner_type', type=str, default='default', help="The type (filename) of learner")
@@ -104,6 +115,11 @@ def get_args(argv):
         temp_args.update(config)
         args = argparse.Namespace(**temp_args)
     
+    # GPU 자동 감지 (gpuid가 None인 경우)
+    if args.gpuid is None:
+        args.gpuid = get_available_gpus()
+        print(f"자동으로 감지된 GPU: {args.gpuid}")
+    
     # VIL 모드를 위한 추가 설정
     if args.IL_mode == 'vil':
         # dataroot를 data_path로 설정
@@ -128,6 +144,20 @@ class Logger(object):
 if __name__ == '__main__':
     args = get_args(sys.argv[1:])
     print(args)
+
+    # GPU 정보 출력
+    if args.gpuid[0] >= 0:
+        num_gpus = len(args.gpuid)
+        print(f"GPU 사용 정보:")
+        print(f"  - 사용 GPU 개수: {num_gpus}")
+        print(f"  - 사용 GPU 목록: {args.gpuid}")
+        for i in args.gpuid:
+            if i >= 0 and torch.cuda.is_available() and i < torch.cuda.device_count():
+                gpu_name = torch.cuda.get_device_name(i)
+                total_memory = torch.cuda.get_device_properties(i).total_memory / (1024**3)
+                print(f"  - GPU {i}: {gpu_name} (메모리: {total_memory:.2f} GB)")
+    else:
+        print("GPU를 사용하지 않고 CPU 모드로 실행합니다.")
 
     # Set seed for reproducibility
     seed_everything(args.seed)

@@ -26,6 +26,10 @@ class Trainer:
         self.batch_size = args.batch_size
         self.workers = args.workers
         
+        # GPU 정보 저장
+        self.gpuid = args.gpuid
+        self.num_gpus = len([gpu for gpu in args.gpuid if gpu >= 0])
+        
         # model load directory
         self.model_top_dir = args.log_dir
 
@@ -174,6 +178,13 @@ class Trainer:
         for mkey in self.metric_keys: temp_table[mkey] = []
         temp_dir = self.log_dir + '/temp/'
         if not os.path.exists(temp_dir): os.makedirs(temp_dir)
+
+        # GPU 정보 출력
+        if self.num_gpus > 0:
+            print(f"\n{f' {self.num_gpus}개 GPU를 사용한 학습 시작 ':=^60}")
+            print(f"GPU ID 목록: {self.gpuid}")
+        else:
+            print(f"\n{f' CPU를 사용한 학습 시작 ':=^60}")
 
         # VIL 모드 확인 - loaders가 orig_loaders로 이름 변경됨
         is_vil_mode = hasattr(self.train_dataset, 'orig_loaders') and hasattr(self.train_dataset, 'class_mask')
